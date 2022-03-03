@@ -1,23 +1,48 @@
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
+
+import axios from 'axios';
+
 import './App.css';
 
+import CountryItems from './components/countries/CountryItems';
+import Footer from './components/ui/Footer';
+import Header from './components/ui/Header';
+import Pagination from './components/ui/Pagination';
+import Search from './components/ui/Search';
+
 function App() {
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, , setItemsPerPage] = useState(15);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await axios(`https://corona.lmao.ninja/v2/countries/${query}?sort=cases`);
+
+      //I used ternary because when we search for a country in search bar, api gives us object and in that
+      //way we can't map through it in CountryItems.js
+      setItems(query === '' ? response.data : Array(response.data));
+      setIsLoading(false);
+    };
+
+    fetchData();
+  }, [query]);
+
+  const indexOfLastPost = currentPage * itemsPerPage;
+  const indexOfFirstPost = indexOfLastPost - itemsPerPage;
+  const currentCountries = items.slice(indexOfFirstPost, indexOfLastPost);
+
+  const paginate = (number) => setCurrentPage(number);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="container">
+      <Header />
+      <Search getQuery={(query) => setQuery(query)} />
+      <CountryItems items={currentCountries} isLoading={isLoading} />
+      <Pagination itemsPerPage={itemsPerPage} totalItems={items.length} paginate={paginate} />
+      <Footer />
     </div>
   );
 }
